@@ -1,6 +1,6 @@
 # SFSC - Appex Salesforce Project
 
-This repository contains all custom metadata components for the SFSC Appex Salesforce org.
+This repository contains all custom metadata components for the SF Appex Salesforce org.
 
 ## 📋 Custom Objects
 
