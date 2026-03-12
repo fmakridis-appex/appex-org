@@ -1,0 +1,13 @@
+/* Globally hide the first column of ANY tree grid inside your specific wrapper class */
+.my-tree-grid-wrapper lightning-tree-grid table th:first-child,
+.my-tree-grid-wrapper lightning-tree-grid table td:first-child {
+    display: none !important;
+    width: 0px !important;
+    padding: 0px !important;
+    visibility: hidden !important;
+}
+
+/* Targeted override for the number cell specifically */
+.my-tree-grid-wrapper .slds-row-number {
+    display: none !important;
+}

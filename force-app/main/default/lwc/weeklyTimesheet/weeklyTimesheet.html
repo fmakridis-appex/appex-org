@@ -1,0 +1,161 @@
+<template>
+    <lightning-card>
+        <div slot="title" class="slds-grid slds-v-center slds-wrap">
+            <div class="slds-m-right_medium">
+                <lightning-button-group>
+                    <lightning-button label="Week" variant={weekViewVariant} onclick={handleViewChange} value="week"></lightning-button>
+                    <lightning-button label="Month" variant={monthViewVariant} onclick={handleViewChange} value="month"></lightning-button>
+                </lightning-button-group>
+            </div>
+
+            <lightning-button-group>
+                <lightning-button-icon icon-name="utility:chevronleft" onclick={handlePrev} alternative-text="Previous"></lightning-button-icon>
+                <lightning-button-icon icon-name="utility:chevronright" onclick={handleNext} alternative-text="Next"></lightning-button-icon>
+            </lightning-button-group>
+
+            <h2 class="slds-text-heading_medium slds-m-left_medium slds-truncate">{currentPeriodLabel}</h2>
+        </div>
+
+        <div class="calendar-container">
+            <template if:true={isMonthView}>
+                <div class="month-header-row slds-grid">
+                    <div class="month-header-cell">Mon</div>
+                    <div class="month-header-cell">Tue</div>
+                    <div class="month-header-cell">Wed</div>
+                    <div class="month-header-cell">Thu</div>
+                    <div class="month-header-cell">Fri</div>
+                    <div class="month-header-cell">Sat</div>
+                    <div class="month-header-cell">Sun</div>
+                </div>
+            </template>
+
+            <div class="calendar-grid">
+                <template for:each={calendarDays} for:item="day">
+                    <div key={day.dateKey} class={day.cssClass}>
+                        <div class="header-box">
+                            <div class="slds-grid slds-grid_vertical-align-center slds-grid_align-spread">
+                                <div>
+                                    <template if:true={isWeekView}>
+                                        <div class="slds-text-body_regular slds-text-color_weak">{day.dayName}</div>
+                                    </template>
+                                    <div class="slds-text-heading_small">
+                                        {day.formattedDate}
+                                        <template if:false={isWeekView}>
+                                            <span class="slds-text-body_small slds-m-left_xx-small text-muted">{day.monthName}</span>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <template if:true={day.totalHours}>
+                                    <span class="slds-badge slds-theme_success">{day.totalHours}h</span>
+                                </template>
+                            </div>
+                        </div>
+
+                        <div class="column-body">
+                            <template for:each={day.records} for:item="rec">
+                                <div key={rec.Id} class="event-card" onclick={handleRecordClick} data-id={rec.Id}>
+                                    <div class="slds-grid slds-grid_vertical-align-center slds-m-bottom_xx-small">
+                                        <div class="hours-bold slds-m-right_x-small">{rec.Hours}h</div>
+                                        <template if:true={rec.showAmount}>
+                                            <div class="slds-text-body_small slds-m-top_xx-small" style="color: #0176d3; font-weight: 600;">
+                                                <lightning-formatted-number 
+                                                    value={rec.AmountContract} 
+                                                    format-style="currency" 
+                                                    currency-code="EUR" 
+                                                    minimum-fraction-digits="2">
+                                                </lightning-formatted-number>
+                                            </div>
+                                        </template>
+                                        <template if:true={rec.showProjectName}>
+                                            <div class="slds-truncate slds-text-body_small" title={rec.DisplayTitle}>
+                                                {rec.DisplayTitle}
+                                            </div>
+                                        </template>
+                                    </div>
+
+                                    <template if:true={rec.Description}>
+                                        <div class="slds-text-body_small desc-text" title={rec.Description}>
+                                            {rec.Description}
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+
+                        <div class="action-footer">
+                            <button class="slds-button slds-button_stretch slds-button_neutral"
+                                onclick={handleAddClick}
+                                data-date={day.dateKey}
+                                data-future={day.isFuture}
+                                disabled={day.isActionDisabled}>
+                                {day.actionLabel}
+                            </button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </lightning-card>
+
+    <!-- Modal -->
+    <template if:true={isModalOpen}>
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={closeModal}>
+                        <lightning-icon icon-name="utility:close" alternative-text="close" variant="inverse" size="small"></lightning-icon>
+                    </button>
+                    <h2 class="slds-text-heading_medium">{modalTitle}</h2>
+                </header>
+
+                <div class="slds-modal__content slds-p-around_medium">
+                    <lightning-record-edit-form
+                        object-api-name={timesheetObjectApiName}
+                        record-id={selectedRecordId}
+                        onsubmit={handleSubmit}
+                        onsuccess={handleSuccess}>
+
+                        <lightning-messages></lightning-messages>
+
+                        <lightning-input-field field-name={fields.date} value={selectedDate} disabled></lightning-input-field>
+
+                        <template if:true={isContractContext}>
+                            <lightning-input-field field-name={fields.contract} value={recordId} disabled></lightning-input-field>
+                            <lightning-input-field field-name={fields.project} value={contractProjectId} disabled></lightning-input-field>
+                        </template>
+
+                        <template if:true={isProjectContext}>
+                            <lightning-input-field field-name={fields.project} value={recordId} disabled></lightning-input-field>
+                        </template>
+
+                        <template if:true={notOnRecordPage}>
+                            <lightning-input-field field-name={fields.project} required></lightning-input-field>
+                        </template>
+
+                        <lightning-input-field field-name={fields.hours} required></lightning-input-field>
+                        <lightning-input-field field-name={fields.description} required></lightning-input-field>
+                        
+                        <lightning-input-field field-name={fields.submittedFor} value={defaultSubmittedFor} required></lightning-input-field>
+
+                        <lightning-input-field field-name={fields.amountContract} disabled></lightning-input-field>
+
+                        <div class="slds-m-top_medium slds-grid slds-grid_align-spread">
+                            <div>
+                                <template if:true={showDeleteButton}>
+                                    <lightning-button variant="destructive" label="Delete" onclick={handleDelete}></lightning-button>
+                                </template>
+                            </div>
+                            <div>
+                                <lightning-button variant="neutral" label="Cancel" onclick={closeModal}></lightning-button>
+                                <lightning-button variant="brand" type="submit" label="Save" class="slds-m-left_small"></lightning-button>
+                            </div>
+                        </div>
+
+                    </lightning-record-edit-form>
+                </div>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</template>

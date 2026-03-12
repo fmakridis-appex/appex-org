@@ -1,0 +1,20 @@
+<template>
+    <lightning-card title="Files Shared with Me" icon-name="standard:file">
+        <div class="slds-p-around_medium">
+            <template if:true={files.data}>
+                <div style="height: 300px;">
+                    <lightning-datatable
+                        key-field="id"
+                        data={files.data}
+                        columns={columns}
+                        hide-checkbox-column
+                        onrowaction={handleRowAction}>
+                    </lightning-datatable>
+                </div>
+            </template>
+            <template if:true={files.error}>
+                <p class="slds-text-color_error">Error loading files.</p>
+            </template>
+        </div>
+    </lightning-card>
+</template>
